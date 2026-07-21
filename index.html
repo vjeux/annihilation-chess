@@ -650,6 +650,18 @@ function isInsufficient(st){
   return false;
 }
 function pieceCount(st,color){return st.board.flat().filter(p=>p&&p[0]===color).length;}
+function positionKey(state){
+  const b=state.board.map(r=>r.map(x=>x||'..').join('')).join('/');
+  const cs=(state.castling.wK?'K':'')+(state.castling.wQ?'Q':'')+(state.castling.bK?'k':'')+(state.castling.bQ?'q':'')||'-';
+  const ep=state.ep?(state.ep[0]+','+state.ep[1]):'-';
+  return b+'|'+state.turn+'|'+cs+'|'+ep;
+}
+function repetitionCount(){
+  const key=positionKey(state);let n=0;
+  if(positionKey(initialSnapshot)===key)n++;
+  for(const h of history){if(positionKey(h.after)===key)n++;}
+  return n;
+}
 function checkEnd(){
   const wc=pieceCount(state,WHITE),bc=pieceCount(state,BLACK);
   // WIN: capture ALL enemy pieces
@@ -661,6 +673,7 @@ function checkEnd(){
   }
   const lm=legalMoves(state);
   if(lm.length===0){gameOver=true;beep('end');showResult('Draw','No legal moves (stalemate)');return;}
+  if(repetitionCount()>=3){gameOver=true;beep('end');showResult('Draw','Threefold repetition');return;}
   if(state.half>=150){gameOver=true;beep('end');showResult('Draw','50-move rule');return;}
 }function showResult(title,sub){document.getElementById('resTitle').textContent=title;document.getElementById('resSub').textContent=sub;document.getElementById('resultBox').style.display='flex';}
 function updateStatus(msg){
